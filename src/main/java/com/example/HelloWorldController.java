@@ -15,6 +15,7 @@ public class HelloWorldController {
     @GetMapping
     public String helloWorld() {
         logger.info("Hello World endpoint was called");
+        logger.info("Logger worked! Ura!");
         return "Hello, World!";
     }
 }

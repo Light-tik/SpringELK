@@ -4,12 +4,16 @@ services:
     image: elastic/elasticsearch:8.10.0
     container_name: elasticsearch
     environment:
-      - discovery.type=single-node
-      - bootstrap.memory_lock=true
+      ES_JAVA_OPTS: "-Xmx512m -Xms512m"
+      xpack.security.enabled: false
+      discovery.type: single-node
+      bootstrap.memory_lock: true
     ulimits:
       memlock:
         soft: -1
         hard: -1
+    volumes:
+      - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     ports:
       - "9200:9200"
     networks:
@@ -19,16 +23,24 @@ services:
     image: logstash:8.10.1
     container_name: logstash
     volumes:
-      - ./logs:/logs
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./logs:/usr/share/logstash/logs
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    environment:
+      LS_JAVA_OPTS: "-Xmx512m -Xms512m"
     ports:
       - "5044:5044"
     networks:
       - elk
+    depends_on:
+      - elasticsearch
 
   kibana:
     image: kibana:8.10.1
     container_name: kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
     ports:
       - "5601:5601"
     networks:
@@ -39,6 +51,8 @@ services:
   app:
     build: .
     container_name: spring-app
+    volumes:
+      - ./logs:/logs
     ports:
       - "8080:8080"
     networks:
